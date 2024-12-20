@@ -1,0 +1,88 @@
+#+begin_export latex
+!The package \ty{mydb} is wraps the \ty{Open} function of the
+!standard library package \ty{database/sql} to allow uniform access to
+!Sqlite, Mysql, and Postgresql databases.
+
+The outline of our package has hooks for imports and functions.
+#+end_export
+#+begin_src go <<mydb.go>>=
+  package mydb
+  import (
+	  //<<Imports>>
+  )
+  //<<Functions>>
+#+end_src
+#+begin_export latex
+We write three functions for opening the three database management
+systems we are targeting.
+#+end_export
+#+begin_src go <<Functions>>=
+  //<<Open Sqlite>>
+  //<<Open Mysql>>
+  //<<Open Postgresql>>
+#+end_src
+#+begin_export latex
+!The function \ty{OpenSqlite} opens an Sqlite3 database, given its
+!name.
+#+end_export
+#+begin_src go <<Open Sqlite>>=
+  func OpenSqlite(name) *sql.DB, err {
+	  d, e := sql.Open("sqlite3", name)
+	  return d, e
+  }
+#+end_src
+#+begin_export latex
+We import \ty{sql} and a Sqlite database driver. The database driver
+is imported using a blank import.
+#+end_export
+#+begin_src go <<Imports>>=
+  "database/sql"
+  _ "github.com/mattn/go-sqlite3"
+#+end_src
+#+begin_export latex
+!The function \ty{OpenMysql} opens a Mysql database given its user,
+!password, host name, port, and database name.
+
+We construct the data source on the pattern
+\begin{verbatim}
+user:pass@host:port/db
+\end{verbatim}
+#+end_export
+#+begin_src go <<Open Mysql>>=
+  func OpenMysql(user, pass, host, port, db string) *sql.DB, err {
+	  ds := fmt.Sprintf("%s:%s@%s:%s/%s",
+		  user, pass, host, port, db)
+	  d, e := sql.Open("mysql", ds)
+	  return d, e
+  }
+#+end_src
+#+begin_export latex
+We import \ty{fmt} and a Mysql database driver.
+#+end_export
+#+begin_src go <<Imports>>=
+  "fmt"
+  _ "github.com/go-sql-driver/mysql"
+#+end_src
+#+begin_export latex
+!The function \ty{OpenPostgresql} opens a Postgresql database, given
+!its user, password, host name, port, and database name.
+
+We construct the data source on the pattern
+\begin{verbatim}
+postgres://user:pass@host:port/db
+\end{verbatim}
+#+end_export
+#+begin_src go <<Open Postgresql>>=
+  func OpenPostgresql(user, pass, host, port, db string) *sql.DB, err {
+	  ds := fmt.Sprintf("postgres://%s:%s@%s:%s/%s",
+		  user, pass, host, port, db)
+	  d, e := sql.Open("postgres", ds)
+	  return d, e
+  }
+#+end_src
+#+begin_export latex
+We import a Postgresql database driver.
+#+end_export
+#+begin_src go <<Imports>>=
+  _ "github.com/lib/pq"
+#+end_src

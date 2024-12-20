@@ -1,0 +1,9 @@
+doc/date.txt
+doc/intro.tex
+doc/mydbDoc.aux
+doc/mydbDoc.log
+doc/mydbDoc.pdf
+doc/mydbDoc.toc
+doc/mydb.tex
+doc/version.txt
+mydb/*.go
