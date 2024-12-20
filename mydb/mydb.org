@@ -1,7 +1,7 @@
 #+begin_export latex
-!The package \ty{mydb} is wraps the \ty{Open} function of the
-!standard library package \ty{database/sql} to allow uniform access to
-!Sqlite, Mysql, and Postgresql databases.
+!The package \ty{mydb} wraps the \ty{Open} function of the standard
+!library package \ty{database/sql} to allow uniform access to Sqlite,
+!Mysql, and Postgresql databases.
 
 The outline of our package has hooks for imports and functions.
 #+end_export
@@ -26,13 +26,13 @@ systems we are targeting.
 !name.
 #+end_export
 #+begin_src go <<Open Sqlite>>=
-  func OpenSqlite(name) *sql.DB, err {
+  func OpenSqlite(name string) (*sql.DB, error) {
 	  d, e := sql.Open("sqlite3", name)
 	  return d, e
   }
 #+end_src
 #+begin_export latex
-We import \ty{sql} and a Sqlite database driver. The database driver
+We import \ty{sql} and am Sqlite database driver. The database driver
 is imported using a blank import.
 #+end_export
 #+begin_src go <<Imports>>=
@@ -41,7 +41,7 @@ is imported using a blank import.
 #+end_src
 #+begin_export latex
 !The function \ty{OpenMysql} opens a Mysql database given its user,
-!password, host name, port, and database name.
+!password, host, port, and name.
 
 We construct the data source on the pattern
 \begin{verbatim}
@@ -49,7 +49,8 @@ user:pass@host:port/db
 \end{verbatim}
 #+end_export
 #+begin_src go <<Open Mysql>>=
-  func OpenMysql(user, pass, host, port, db string) *sql.DB, err {
+  func OpenMysql(user, pass, host, port,
+	  db string) (*sql.DB, error) {
 	  ds := fmt.Sprintf("%s:%s@%s:%s/%s",
 		  user, pass, host, port, db)
 	  d, e := sql.Open("mysql", ds)
@@ -65,7 +66,7 @@ We import \ty{fmt} and a Mysql database driver.
 #+end_src
 #+begin_export latex
 !The function \ty{OpenPostgresql} opens a Postgresql database, given
-!its user, password, host name, port, and database name.
+!its user, password, host, port, and name.
 
 We construct the data source on the pattern
 \begin{verbatim}
@@ -73,7 +74,8 @@ postgres://user:pass@host:port/db
 \end{verbatim}
 #+end_export
 #+begin_src go <<Open Postgresql>>=
-  func OpenPostgresql(user, pass, host, port, db string) *sql.DB, err {
+  func OpenPostgresql(user, pass, host, port,
+	  db string) (*sql.DB, error) {
 	  ds := fmt.Sprintf("postgres://%s:%s@%s:%s/%s",
 		  user, pass, host, port, db)
 	  d, e := sql.Open("postgres", ds)
