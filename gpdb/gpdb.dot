@@ -1,0 +1,33 @@
+graph g {
+      node [fontname="Helvetica,Arial,sans-serif"]
+      edge [fontname="Helvetica,Arial,sans-serif"]
+      overlap=false;
+      genome [shape=box];
+      ggid [label=<<u>gid</u>>];
+      organism, domain, size;
+      gpid [label=pid];
+
+      genome -- ggid, organism, domain, size, gpid;
+
+      publication [shape=box];
+      ppid [label=<<u>pid</u>>];
+      journal, volume, start_page, end_page, year;
+
+      publication -- ppid, journal, volume, start_page, end_page, year;
+
+      institute [shape=box];
+      iiid [label=<<u>iid</u>>];
+      name, country;
+
+      institute -- iiid, name, country;
+
+      project [shape=diamond];
+      pgid [label=<<u>gid</u>>];
+      piid [label=<<u>iid</u>>];
+
+      project -- pgid, piid;
+
+      genome -- publication;
+      genome -- project;
+      project -- institute;
+}

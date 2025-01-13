@@ -1,0 +1,85 @@
+#+begin_export latex
+This is how I installed Postgresql under Ubuntu 24.04. We begin by
+setting up \ty{apt}.
+#+end_export
+#+begin_src sh <<psql.sh>>=
+  sudo apt install -y postgresql-common
+  sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh
+#+end_src
+#+begin_export latex
+We update \ty{apt} and install \ty{postgresql}.
+#+end_export
+#+begin_src sh <<psql.sh>>=
+  sudo apt update
+  sudo apt -y upgrade
+  sudo apt install -y postgresql
+#+end_src
+#+begin_export latex
+We allow ``trusted'' access from all local connections by setting the
+connection method for local connections to ``trust''. For this we open
+as superuser the configuration file
+\begin{verbatim}
+/etc/postgresql/16/main/pg_hba.conf
+\end{verbatim}
+Then we change the three entries in the connection table from peer and
+scram-sha-256 to trust. Here is the original table, slightly edited
+to fit on the page:
+\begin{verbatim}
+# TYPE  DATABASE  USER  ADDRESS       METHOD
+
+# "local" is for Unix domain socket connections only
+local   all       all                 peer
+# IPv4 local connections:
+host    all       all   127.0.0.1/32  scram-sha-256
+# IPv6 local connections:
+host    all       all   ::1/128       scram-sha-256
+\end{verbatim}
+And here its edited version:
+\begin{verbatim}
+# TYPE  DATABASE  USER  ADDRESS       METHOD
+
+# "local" is for Unix domain socket connections only
+local   all       all                 trust
+# IPv4 local connections:
+host    all       all   127.0.0.1/32  trust
+# IPv6 local connections:
+host    all       all   ::1/128       trust
+\end{verbatim}
+Then restart the database.
+#+end_export
+#+begin_src sh <<psql.sh>>=
+  sudo systemctl restart postgresql.service
+#+end_src
+#+begin_export latex
+Using the initial user, \ty{postgres}, we create the database user
+\ty{anonymous} and make it a superuser with \ty{-s}.
+#+end_export
+#+begin_src sh <<psql.sh>>=
+  sudo -u postgres createuser -s anonymous
+#+end_src
+#+begin_export latex
+It is also useful to have a database called the user name.
+#+end_export
+#+begin_src sh <<psql.sh>>=
+  createdb -U anonymous anonymous
+#+end_src
+#+begin_export latex
+We can drop this database again.
+#+end_export
+#+begin_src sh <<psql.sh>>=
+  dropdb anonymous
+#+end_src
+#+begin_export latex
+Likewise, we can drop the user \ty{anonymous}.
+#+end_export
+#+begin_src sh <<psql.sh>>=
+  sudo -u postgres dropuser anonymous
+#+end_src
+#+begin_export latex
+However, let's leave our Postgresql installation with user
+and database \ty{anonymous}.
+#+end_export
+#+begin_src sh <<psql.sh>>=
+  sudo -u postgres createuser -s anonymous
+  createdb anonymous
+#+end_src

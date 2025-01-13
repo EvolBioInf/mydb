@@ -1,0 +1,235 @@
+#+begin_export latex
+Our example database holds genome projects and is called \ty{gpdb},
+for ``genome projects database''. As shown in Figure~\ref{fig:gpdb},
+\ty{gpdb} consists of four tables describing the \ty{genome} sequenced
+at some \ty{institute} in the course of a \ty{project} that culminated
+in a \ty{publication}.
+
+\begin{figure}
+\begin{center}
+  \resizebox{\textwidth}{!}{\includegraphics{../gpdb/gpdb}}
+\end{center}
+\caption{The database of genome projects, \ty{gpdb}.}\label{fig:gpdb}
+\end{figure}
+
+Table~\ref{tab:genome} shows the twelve entries of \ty{genome}; note
+that the genome size is given in kb. The twelve genomes in \ty{genome}
+were sequenced by the ten institutes (Table~\ref{tab:institute}) in
+the course of 16 \ty{project}s (Table~\ref{tab:propub}A), as
+documented in 12 \ty{publication}s (Table~\ref{tab:propub}B).
+
+\begin{table}
+  \caption{Entries in table \ty{genome}.}\label{tab:genome}
+  \begin{center}
+    \input{genome}
+  \end{center}
+\end{table}
+
+\begin{table}
+  \caption{Entries in table \ty{institute}.}\label{tab:institute}
+  \begin{center}
+    \input{institute}
+  \end{center}
+\end{table}
+
+\begin{table}
+  \caption{Entries in tables \ty{project} (\textbf{A}) and \ty{publication} (\textbf{B}).}\label{tab:propub}
+  \begin{center}
+  \begin{tabular}{cc}
+  \textbf{A} & \textbf{B}\\
+  \input{project} & \input{publication}
+  \end{tabular}
+  \end{center}
+\end{table}
+
+We construct \ty{gpdb} in three database systems, Sqlite, Mysql, and
+gPostgresql. Scince Sql is a standardized language, the actual
+construction of the database is identical for all three systems. They
+differ, however, in their commands for data import. So we begin by
+writing the core SQL code for creating the tables of \ty{gpdb}, before
+we write system-specific code to fill the database.
+
+\section{Construct \ty{gpdb}}
+Our construction script begins by dropping tables, before creating new
+ones.
+#+end_export
+#+begin_src sql <<gpdb.sql>>=
+  -- <<Drop tables>>
+  -- <<Create tables>>
+#+end_src
+#+begin_export latex
+When dropping tables, order matters, as we can't drop a table referred
+to by foreign keys. But we only discover the foreign keys by creating
+the tables. So we first do that, before we specify the order in which
+to drop the tables. We create the four tables shown in
+Figure~\ref{fig:gpdb}, \ty{genome}, \ty{institute}, \ty{project}, and
+\ty{publication}.
+#+end_export
+#+begin_src sql <<Create tables>>=
+  -- <<Create \ty{genome}>>
+  -- <<Create \ty{institute}>>
+  -- <<Create \ty{project}>>
+  -- <<Create \ty{publication}>>
+#+end_src
+#+begin_export latex
+A \emph{genome} has an ID and comes from an organism, which is
+classified into one of the three domains of life, and is published in
+a publication identified by another ID (Figure~\ref{fig:gpdb}). As
+primary key we use the genome identifier \ty{gid}.
+#+end_export
+#+begin_src sql <<Create \ty{genome}>>=
+  create table genome (
+	 gid varchar(10),
+	 organism text,
+	 domain varchar(20),
+	 size int,
+	 pid varchar(10),
+	 primary key (gid)
+  );
+#+end_src
+#+begin_export latex
+An \emph{institute} has an identifier and a name, and is located in a
+country (Figure~\ref{fig:gpdb}). The institute identifier \ty{iid} is
+the primary key.
+#+end_export
+#+begin_src sql <<Create \ty{institute}>>=
+  create table institute (
+	 iid varchar(10),
+	 name text,
+	 country text,
+	 primary key (iid)
+  );
+#+end_src
+#+begin_export latex
+A \emph{project} brings together a genome and an institute. Their
+identifiers also serve together as primary key. Also, no project
+should refer to a genome or institute that doesn't exist. We ensure
+this by setting the corresponding foreign keys.
+#+end_export
+#+begin_src sql <<Create \ty{project}>>=
+  create table project (
+	 gid varchar(10),
+	 iid varchar(10),
+	 primary key (gid, iid),
+	 foreign key (gid) references genome(gid),
+	 foreign key (iid) references institute(iid)
+  );       
+#+end_src
+#+begin_export latex
+A \emph{publication} has an identifier, was published in a journal,
+where it appeared in a given volume between a start an and end page,
+in a certain year. The identifier is also the table's primary key.
+#+end_export
+#+begin_src sql <<Create \ty{publication}>>=
+  create table publication (
+	 pid varchar(10),
+	 journal text,
+	 volume int,
+	 start_page int,
+	 end_page int,
+	 year int,
+	 primary key (pid)
+  );       
+#+end_src
+#+begin_export latex
+Having created the foreign keys, we can now specify the order in which
+to drop tables. First comes the table containing the foreign keys,
+\ty{project}, then the rest. We only drop a table if it exists.
+#+end_export
+#+begin_src sql <<Drop tables>>=
+  drop table if exists project;
+  drop table if exists genome;
+  drop table if exists institute;
+  drop table if exists publication;
+#+end_src
+#+begin_export latex
+\section{Fill \ty{gpdb}}
+The data shown in Tables~\ref{tab:genome}--\ref{tab:propub} is
+contained in four files,
+\begin{enumerate}
+\item \ty{genome.txt},
+\item \ty{institute.txt},
+\item \ty{project.txt}, and
+\item \ty{publication.txt}. 
+\end{enumerate}
+The columns in these files are tab-delimited. To transfer the data
+from these files into the tables we just created, we write three
+separate sets of commands for the three database systems we aim to
+cater for, Sqlite, Mysql, and Postgresql.
+
+\subsection{Sqlite}
+The default column separator in Sqlite is the pipe character,
+\verb+|+, so we declare tab as the delimiter and import the data into
+the tables. We already saw that order mattered when dropping
+tables. It also matters when constructing tables, as foreign keys
+cannot refer to non-existent entries. So fill the tables in the
+reverse order in which we dropped them above.
+#+end_export
+#+begin_src sql <<sqlite.sql>>=
+  .separator "\t"
+  .import genome.txt genome
+  .import institute.txt institute
+  .import project.txt project
+  .import publication.txt publication
+#+end_src
+#+begin_export latex
+We can now construct the Sqlite version of \ty{gpdb} by piping the
+commands we just created through \ty{sqlite3}.
+#+end_export
+#+begin_src sh <<gpdb.sh>>=
+  cat gpdb.sql sqlite.sql |
+      sqlite3 gpdb
+#+end_src
+#+begin_export latex
+\subsection{Mysql}
+Mysql imports from tab-delimited text files, so we are already have
+the correct delimiter. However, in Mysql we need to explicitly create
+our target database before we can fill it. We only create the database
+if it does not exist yet.
+#+end_export
+#+begin_src sh <<gpdb.sh>>=
+  mysql -u anonymous -e "create database if not exists gpdb"
+#+end_src
+#+begin_export latex
+Now we can load the data from local files into the database.
+#+end_export
+#+begin_src sql <<mysql.sql>>=
+  load data local infile 'genome.txt' into table genome;
+  load data local infile 'institute.txt' into table institute;
+  load data local infile 'project.txt' into table project;
+  load data local infile 'publication.txt' into table publication;
+#+end_src
+#+begin_export latex
+In the construction step we allow the Mysql client to load data from
+local files.
+#+end_export
+#+begin_src sh <<gpdb.sh>>=
+  cat gpdb.sql mysql.sql |
+      mysql -u anonymous gpdb --local_infile=1
+#+end_src
+#+begin_export latex
+\subsection{Postgresql}
+Like Mysql, Postgresql also imports from tab-delimited text files.
+#+end_export
+#+begin_src sql <<psql.sql>>=
+  \copy genome from genome.txt
+  \copy institute from institute.txt
+  \copy project from project.txt
+  \copy publication from publication.txt
+#+end_src
+#+begin_export latex
+Like with Mysql, we need to explicitly create the target database in
+Postgresql. This is usually done with the external program
+\ty{createdb}, which we only call if \ty{gpdb} does not exist
+yet. Then we run \ty{psql} in quiet mode on the Sql commands we just
+constructed.
+#+end_export
+#+begin_src sh <<gpdb.sh>>=
+  db=$(psql -U anonymous -c "\list" |
+	   awk '$1=="gpdb"{print $1}')
+  if [[ $db != "gpdb" ]]; then
+      createdb -U anonymous gpdb
+  fi
+  cat gpdb.sql psql.sql |
+      psql -U anonymous -d gpdb -q
+#+end_src

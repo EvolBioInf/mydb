@@ -1,7 +1,8 @@
 #+begin_export latex
-!The package \ty{mydb} wraps the \ty{Open} function of the standard
-!library package \ty{database/sql} to allow uniform access to Sqlite,
-!Mysql, and Postgresql databases.
+\section{Implementation}
+!The package \ty{mydb} wraps the \ty{Open} function of
+!\ty{database/sql} to allow uniform access to Sqlite, Mysql, and
+!Postgresql databases.
 
 The outline of our package has hooks for imports and functions.
 #+end_export
@@ -22,50 +23,106 @@ systems we are targeting.
   //<<Open Postgresql>>
 #+end_src
 #+begin_export latex
-!The function \ty{OpenSqlite} opens an Sqlite3 database, given its
+!The function \ty{OpenSqlite} opens an Sqlite3 database given its
 !name.
 #+end_export
 #+begin_src go <<Open Sqlite>>=
   func OpenSqlite(name string) (*sql.DB, error) {
 	  d, e := sql.Open("sqlite3", name)
+	  if e != nil {
+		  log.Fatal(e)
+	  }
 	  return d, e
   }
 #+end_src
 #+begin_export latex
-We import \ty{sql} and am Sqlite database driver. The database driver
-is imported using a blank import.
+We import \ty{sql}, the Sqlite database driver, and \ty{log}. The
+database driver is imported using a blank import.
 #+end_export
 #+begin_src go <<Imports>>=
   "database/sql"
   _ "github.com/mattn/go-sqlite3"
+  "log"
 #+end_src
 #+begin_export latex
 !The function \ty{OpenMysql} opens a Mysql database given its user,
 !password, host, port, and name.
 
-We construct the data source on the pattern
-\begin{verbatim}
-user:pass@host:port/db
-\end{verbatim}
+The connection is opened in four steps, we first construct the
+database address and the Mysql configuration, before we get the Mysql
+connection, which we check before we return it.
 #+end_export
 #+begin_src go <<Open Mysql>>=
   func OpenMysql(user, pass, host, port,
-	  db string) (*sql.DB, error) {
-	  ds := fmt.Sprintf("%s:%s@%s:%s/%s",
-		  user, pass, host, port, db)
-	  d, e := sql.Open("mysql", ds)
-	  return d, e
+	  db string) (con *sql.DB, err error) {
+	  //<<Construct Mysql address>>
+	  //<<Construct Mysql configuration>>
+	  //<<Get Mysql connection>>
+	  //<<Check Mysql connection>>
+	  return con, err
   }
 #+end_src
 #+begin_export latex
-We import \ty{fmt} and a Mysql database driver.
+The address consists of the host, by default the local host, and the
+port, by default 3306.
 #+end_export
-#+begin_src go <<Imports>>=
-  "fmt"
-  _ "github.com/go-sql-driver/mysql"
+#+begin_src go <<Construct Mysql address>>=
+  if host == "" {
+	  host = "127.0.0.1"
+  }
+  if port == "" {
+	  port = "3306"
+  }
+  addr := host + ":" + port
 #+end_src
 #+begin_export latex
-!The function \ty{OpenPostgresql} opens a Postgresql database, given
+The configuration of a Mysql connection is encapsulated in the struct
+\ty{Config} contained in the \ty{mysql} package. We fill it with the
+parameters we have been passed and the address we just
+constructed. Then we convert that into the database source name, DSN.
+#+end_export
+#+begin_src go <<Construct Mysql configuration>>=
+  cfg := mysql.Config{
+	  User:                 user,
+	  Passwd:               pass,
+	  Net:                  "tcp",
+	  Addr:                 addr,
+	  DBName:               db,
+  }
+  dsn := cfg.FormatDSN()
+#+end_src
+#+begin_export latex
+We import the \ty{mysql} database driver.
+#+end_export
+#+begin_src go <<Imports>>=
+    "github.com/go-sql-driver/mysql"
+#+end_src
+#+begin_export latex
+We open a Mysql connection with its driver and DSN.
+#+end_export
+#+begin_src go <<Get Mysql connection>>=
+  con, err = sql.Open("mysql", dsn)
+  if err != nil {
+	  log.Fatal(err)
+  }
+#+end_src
+#+begin_export latex
+We import \ty{log}.
+#+end_export
+#+begin_src go <<Imports>>=
+  "log"
+#+end_src
+#+begin_export latex
+We ping the database to make sure we are actually connected.
+#+end_export
+#+begin_src go <<Check Mysql connection>>=
+  pingErr := con.Ping()
+  if pingErr != nil {
+	  log.Fatal(pingErr)
+  }
+#+end_src
+#+begin_export latex
+!The function \ty{OpenPostgresql} opens a Postgresql database given
 !its user, password, host, port, and name.
 
 We construct the data source on the pattern
@@ -76,15 +133,159 @@ postgres://user:pass@host:port/db
 #+begin_src go <<Open Postgresql>>=
   func OpenPostgresql(user, pass, host, port,
 	  db string) (*sql.DB, error) {
-	  ds := fmt.Sprintf("postgres://%s:%s@%s:%s/%s",
-		  user, pass, host, port, db)
-	  d, e := sql.Open("postgres", ds)
+	  templ := "postgres://%s:%s@%s:%s/%s?sslmode=disable"
+	  if host == "" {
+		  host = "localhost"
+	  }
+	  if port == "" {
+		  port = "5432"
+	  }
+	  ds := fmt.Sprintf(templ, user, pass, host, port, db)
+	  d, e := sql.Open("pgx", ds)
 	  return d, e
   }
 #+end_src
 #+begin_export latex
-We import a Postgresql database driver.
+We import \ty{fmt} and the Postgresql database driver.
 #+end_export
 #+begin_src go <<Imports>>=
-  _ "github.com/lib/pq"
+  "fmt"
+  _ "github.com/jackc/pgx/v5/stdlib"
+#+end_src
+#+begin_export latex
+\section{Testing}
+Our tests are based on the genome projects database, which is
+described in Chapter~\ref{ch:gpdb}. We now assume that \ty{gpdb},
+exists and can be accessed using the following three example queries.
+#+end_export
+#+begin_src sh <<query.sh>>=
+  q="select * from genome"
+  echo "$q" | sqlite3 ../gpdb/gpdb
+  echo "$q" | mysql -u anonymous gpdb
+  echo "$q" | psql -U anonymous gpdb
+#+end_src
+#+begin_export latex
+Our outline of the testing program contains hooks for imports and the
+actual testing logic.
+#+end_export
+#+begin_src go <<mydb_test.go>>=
+  package mydb
+
+  import (
+	  "testing"
+	  //<<Testing imports>>
+  )
+  func TestMydb(t *testing.T) {
+	  //<<Testing>>
+  }
+#+end_src
+#+begin_export latex
+We test with a single query. So we construct this query and store its
+intended result. Then we open a database connection for each database,
+and query them in turn.
+#+end_export
+#+begin_src go <<Testing>>=
+  var connections []*sql.DB
+  //<<Construct query>>
+  //<<Store result>>
+  //<<Open db connections>>
+  connections = connections[2:]
+  for i, connection := range connections {
+	  fmt.Printf("Testing connection %d\n", i+1)
+	  //<<Query connection>>
+  }
+#+end_src
+#+begin_export latex
+We import \ty{sql} and \ty{fmt}.
+#+end_export
+#+begin_src go <<Testing imports>>=
+  "database/sql"
+  "fmt"
+#+end_src
+#+begin_export latex
+In our query we join the four tables in the database, but only select
+one attribute from the result, the genome ID. This is not a realistic
+query, but it will do as our test.
+#+end_export
+#+begin_src go <<Construct query>>=
+  query := "select gid from genome " +
+	  "join publication using(pid) " +
+	  "join project using(gid) " +
+	  "join institute using(iid)"
+#+end_src
+#+begin_export latex
+The result we want is contained in file \ty{r.txt}, which we store as
+a single row in the string \ty{want}.
+#+end_export
+#+begin_src go <<Store result>>= 
+  data, e := os.ReadFile("r.txt")
+  if e != nil {
+	  t.Error(e)
+  }
+  data = bytes.ReplaceAll(data, []byte("\n"), []byte(""))
+  want := string(data)
+#+end_src
+#+begin_export latex
+We import \ty{os} and \ty{bytes}.
+#+end_export
+#+begin_src sh <<Testing imports>>=
+  "os"
+  "bytes"
+#+end_src
+#+begin_export latex
+We open a database connection for each of the three systems we cover,
+Sqlite, Mysql, and Postgresql.
+#+end_export
+#+begin_src go <<Open db connections>>=
+  //<<Open Sqlite db>>
+  //<<Open Mysql db>>
+  //<<Open Postgresql db>>
+#+end_src
+#+begin_export latex
+We open the Sqlite database and store the connection.
+#+end_export
+#+begin_src go <<Open Sqlite db>>=
+  c, e := OpenSqlite("../gpdb/gpdb")
+  if e != nil {
+	  t.Error(e)
+  }
+  connections = append(connections, c)
+#+end_src
+#+begin_export latex
+We open the Mysql database and store the connection.
+#+end_export
+#+begin_src go <<Open Mysql db>>=
+  c, e = OpenMysql("anonymous", "", "", "", "gpdb")
+  if e != nil {
+	  t.Error(e)
+  }
+  connections = append(connections, c)
+#+end_src
+#+begin_export latex
+We open the Postgresql database and store the connection.
+#+end_export
+#+begin_src go <<Open Postgresql db>>=
+  c, e = OpenPostgresql("anonymous", "", "", "", "gpdb")
+  if e != nil {
+	  t.Error(e)
+  }
+  connections = append(connections, c)
+#+end_src
+#+begin_export latex
+When we query the connection, we store the result we get and compare
+it to the result we want.
+#+end_export
+#+begin_src go <<Query connection>>=
+  rows, e := connection.Query(query)
+  if e != nil {
+	  t.Error(e)
+  }
+  var s, get string
+  for rows.Next() {
+	  rows.Scan(&s)
+	  get += s
+  }
+  if get != want {
+	  t.Errorf("Get:\n%s\nWant:\n%s\n", get, want)
+  }
 #+end_src
