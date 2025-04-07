@@ -1,5 +1,5 @@
 #+begin_export latex
-\section{Implementation}
+\section{Getting Connected}
 !The package \ty{mydb} wraps the \ty{Open} function of
 !\ty{database/sql} to allow uniform access to Sqlite, Mysql, and
 !Postgresql databases.

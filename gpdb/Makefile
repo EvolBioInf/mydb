@@ -1,4 +1,4 @@
-db = $(shell psql -c "\list" | grep gpdb | cut -f 1 -d '|' | sed 's/ //g')
+db = $(shell psql -U anonymous -c "\list" | grep gpdb | cut -f 1 -d '|' | sed 's/ //g')
 all: gpdb.ps gpdb.sh gpdb.sql mysql.sql psql.sql sqlite.sql 
 	bash gpdb.sh
 gpdb.ps: gpdb.dot
@@ -17,5 +17,5 @@ sqlite.sql: gpdb.org
 clean:
 	rm -f gpdb.ps gpdb.sh gpdb.sql mysql.sql psql.sql sqlite.sql
 	rm -f gpdb
-	mysql -e "drop database if exists gpdb"
-	test -z $(db) || dropdb gpdb
+	mysql -u anonymous -e "drop database if exists gpdb"
+	test -z $(db) || dropdb -U anonymous gpdb

@@ -161,9 +161,9 @@ from them files into the tables we just created, we write three
 separate sets of commands for the three database systems we cater for,
 Sqlite, Mysql, and Postgresql.
 
-\subsection{Sqlite}
-The default column separator in Sqlite is the pipe character, \verb+|+
-rather than tab,, so we declare tab as the delimiter and import the
+\subsection*{Sqlite}
+The default column separator in Sqlite is the pipe character, \verb+|+,
+rather than tab, so we declare tab as the delimiter and import the
 data. We already saw that order mattered when dropping tables. It also
 matters when constructing tables, as foreign keys cannot refer to
 non-existent entries. So we fill the tables in the reverse order in
@@ -185,7 +185,7 @@ commands we just created through \ty{sqlite3}.
       sqlite3 gpdb
 #+end_src
 #+begin_export latex
-\subsection{Mysql}
+\subsection*{Mysql}
 Mysql imports from tab-delimited text files, so we already have the
 correct delimiter. However, in Mysql we need to explicitly create our
 target database before we can fill it. We only create the database if
@@ -212,7 +212,7 @@ local files.
       mysql -u anonymous gpdb --local_infile=1
 #+end_src
 #+begin_export latex
-\subsection{Postgresql}
+\subsection*{Postgresql}
 Like Mysql, Postgresql also imports from tab-delimited text files.
 #+end_export
 #+begin_src sql <<psql.sql>>=
