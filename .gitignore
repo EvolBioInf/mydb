@@ -14,5 +14,4 @@ doc/version.txt
 gpdb/*.txt
 gpdb/gpdb
 gpdb/gpdb.ps
-mydb/*.go
 mydb/gpdb

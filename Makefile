@@ -1,4 +1,4 @@
-dirs = gpdb mydb mysql
+dirs = gpdb mydb mysql psql
 all: progs doc
 progs:
 	for dir in $(dirs); do \

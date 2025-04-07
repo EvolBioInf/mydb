@@ -9,6 +9,7 @@ s/^#+begin_src *[gG][oO] *<</<</
 s/^#+begin_src *[hH][tT][mM][lL] *<</<</
 s/^#+begin_src *[sS][qQ][lL] *<</<</
 s/\/\/ *<</<</
+s/-- *<</<</
 /^#+end/d
 /^\*/d
 s/^  //

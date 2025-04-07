@@ -1,0 +1,8 @@
+* [[https://owncloud.gwdg.de/index.php/s/pYKdcAppbbetMuj][=mydb=]]: Database Connection
+** Description
+Package for conveniently connecting from Go to Sqlite, Mysql, and
+Postgresql. The [[https://owncloud.gwdg.de/index.php/s/pYKdcAppbbetMuj][documentation]] also describes how to set up these
+database systems, an example database, and how to connect to it.
+** Author
+Bernhard Haubold, =haubold@evolbio.mpg.de=
+
