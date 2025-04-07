@@ -1,73 +1,75 @@
-#+begin_export latex
+#+begin_src latex
 Here I describe how I installed Mysql under Ubuntu 24.04 following the
 Web Site ``A Quick Guide to Using the MySQL APT Repository''. First, I
 looked up the name of the latest apt configuration file. The program
 \ty{curl} allows this to be done from the command line, but you can of
 course also use a web browser.
-#+end_export
+#+end_src
 #+begin_src sh <<mycli.sh>>=
   curl https://dev.mysql.com/downloads/repo/apt/ |
       grep apt-config
 #+end_src
-#+begin_export latex
+#+begin_src latex
 Download the file, 8.33 in my case, but this is bound to change.
-#+end_export
+#+end_src
 #+begin_src sh <<mycli.sh>>=
   wget https://dev.mysql.com/get/mysql-apt-config_0.8.33-1_all.deb
 #+end_src
-#+begin_export latex
+#+begin_src latex
 Install the configuration package.
-#+end_export
+#+end_src
 #+begin_src sh <<mycli.sh>>=
   sudo dpkg -i mysql-apt-config_0.8.33-1_all.deb
 #+end_src
-#+begin_export latex
+#+begin_src latex
 Update apt.
-#+end_export
+#+end_src
 #+begin_src sh <<mycli.sh>>=
   sudo apt update
 #+end_src
-#+begin_export latex
+#+begin_src latex
 Install the community server. During installation you will be asked to
 set the root password for the server.
-#+end_export
-#+begin_src sh <<mycli.sh>>=
-  sudo atp install mysql-community-server
 #+end_src
-#+begin_export latex
-Log as root onto the server using your root password.
-\begin{verbatim}
-mysql -u root -p
-\end{verbatim}
-Create user \ty{anonymous} and leave its password blank.
-\begin{verbatim}
-create user 'anonymous@'localhost' identified by ''
-\end{verbatim}
-Grant sweeping permissions to user \ty{anonymous} on all tables in all
-databases.
-\begin{verbatim}
-grant all on *.* to 'anonymous@'localhost'
-\end{verbatim}
-We often need to load data from local files. Under Mysql this only
-works if the global variable \ty{local\_infile} is switched on. So we
-check the status of this variable.
-#+end_export
 #+begin_src sh <<mycli.sh>>=
-  mysql -u anonymous -e "show global variables like 'local_infile'"
+  sudo apt install mysql-community-server
 #+end_src
-#+begin_export latex
-If it is off, we switch it on.
-#+end_export
+#+begin_src latex
+  Log on as root using your root password.
+  \begin{verbatim}
+  mysql -u root -p
+  \end{verbatim}
+  Create user \ty{anonymous} and leave its password blank.
+  \begin{verbatim}
+  create user 'anonymous@'localhost' identified by ''
+  \end{verbatim}
+  Grant sweeping permissions to user \ty{anonymous} on all tables in all
+  databases.
+  \begin{verbatim}
+  grant all on *.* to 'anonymous@'localhost'
+  \end{verbatim}
+  We often need to load data from local files. Under Mysql this only
+  works if the global variable \ty{local\_infile} is switched on. So we
+  check the status of this variable.
+#+end_src
+#+begin_src sh <<mycli.sh>>=
+  mysql -u anonymous \
+	-e "show global variables like 'local_infile'"
+#+end_src
+#+begin_src latex
+  If it is off, we switch it on.
+#+end_src
 #+begin_src sh <<mycli.sh>>=
   mysql -u anonymous -e "set global local_infile=true"
 #+end_src
-#+begin_export latex
+#+begin_src latex
 Now the query
-#+end_export
-#+begin_src sh <<mycli.sh>>=
-  mysql -u anonymous -e "show global variables like 'local_infile'"
 #+end_src
-#+begin_export latex
+#+begin_src sh <<mycli.sh>>=
+  mysql -u anonymous \
+	-e "show global variables like 'local_infile'"
+#+end_src
+#+begin_src latex
 should return
 \begin{verbatim}
 +---------------+-------+
@@ -76,4 +78,4 @@ should return
 | local_infile  | ON    |
 +---------------+-------+
 \end{verbatim}
-#+end_export
+#+end_src

@@ -1,9 +1,12 @@
 #+begin_export latex
 Our example database holds genome projects and is called \ty{gpdb},
 for ``genome projects database''. As shown in Figure~\ref{fig:gpdb},
-\ty{gpdb} consists of four tables describing the \ty{genome} sequenced
-at some \ty{institute} in the course of a \ty{project} that culminated
-in a \ty{publication}.
+\ty{gpdb} consists of four tables. Genomes are collected in table
+\ty{genome} and the institutes that sequenced them in table
+\ty{institute}. Sequencing takes place in the course of a project that
+links a genome to at least one institute, as summarized in table
+\ty{project}. A sequenced genome, finally, is usually described in a
+publication stored in table \ty{publication}.
 
 \begin{figure}
 \begin{center}
@@ -13,8 +16,8 @@ in a \ty{publication}.
 \end{figure}
 
 Table~\ref{tab:genome} shows the twelve entries of \ty{genome}; note
-that the genome size is given in kb. The twelve genomes in \ty{genome}
-were sequenced by the ten institutes (Table~\ref{tab:institute}) in
+that the genome size is given in kb. The twelve genomes
+were sequenced by ten \ty{institute}s (Table~\ref{tab:institute}) in
 the course of 16 \ty{project}s (Table~\ref{tab:propub}A), as
 documented in 12 \ty{publication}s (Table~\ref{tab:propub}B).
 
@@ -43,7 +46,7 @@ documented in 12 \ty{publication}s (Table~\ref{tab:propub}B).
 \end{table}
 
 We construct \ty{gpdb} in three database systems, Sqlite, Mysql, and
-gPostgresql. Scince Sql is a standardized language, the actual
+Postgresql. Scince Sql is a standardized language, the actual
 construction of the database is identical for all three systems. They
 differ, however, in their commands for data import. So we begin by
 writing the core SQL code for creating the tables of \ty{gpdb}, before
@@ -59,7 +62,7 @@ ones.
 #+end_src
 #+begin_export latex
 When dropping tables, order matters, as we can't drop a table referred
-to by foreign keys. But we only discover the foreign keys by creating
+to by a foreign key. But we only discover the foreign keys by creating
 the tables. So we first do that, before we specify the order in which
 to drop the tables. We create the four tables shown in
 Figure~\ref{fig:gpdb}, \ty{genome}, \ty{institute}, \ty{project}, and
@@ -134,7 +137,8 @@ in a certain year. The identifier is also the table's primary key.
 #+begin_export latex
 Having created the foreign keys, we can now specify the order in which
 to drop tables. First comes the table containing the foreign keys,
-\ty{project}, then the rest. We only drop a table if it exists.
+\ty{project}, then the rest. We only drop a table if it actually
+exists.
 #+end_export
 #+begin_src sql <<Drop tables>>=
   drop table if exists project;
@@ -153,17 +157,17 @@ contained in four files,
 \item \ty{publication.txt}. 
 \end{enumerate}
 The columns in these files are tab-delimited. To transfer the data
-from these files into the tables we just created, we write three
-separate sets of commands for the three database systems we aim to
-cater for, Sqlite, Mysql, and Postgresql.
+from them files into the tables we just created, we write three
+separate sets of commands for the three database systems we cater for,
+Sqlite, Mysql, and Postgresql.
 
 \subsection{Sqlite}
-The default column separator in Sqlite is the pipe character,
-\verb+|+, so we declare tab as the delimiter and import the data into
-the tables. We already saw that order mattered when dropping
-tables. It also matters when constructing tables, as foreign keys
-cannot refer to non-existent entries. So fill the tables in the
-reverse order in which we dropped them above.
+The default column separator in Sqlite is the pipe character, \verb+|+
+rather than tab,, so we declare tab as the delimiter and import the
+data. We already saw that order mattered when dropping tables. It also
+matters when constructing tables, as foreign keys cannot refer to
+non-existent entries. So we fill the tables in the reverse order in
+which we dropped them above.
 #+end_export
 #+begin_src sql <<sqlite.sql>>=
   .separator "\t"
@@ -182,10 +186,10 @@ commands we just created through \ty{sqlite3}.
 #+end_src
 #+begin_export latex
 \subsection{Mysql}
-Mysql imports from tab-delimited text files, so we are already have
-the correct delimiter. However, in Mysql we need to explicitly create
-our target database before we can fill it. We only create the database
-if it does not exist yet.
+Mysql imports from tab-delimited text files, so we already have the
+correct delimiter. However, in Mysql we need to explicitly create our
+target database before we can fill it. We only create the database if
+it does not exist yet.
 #+end_export
 #+begin_src sh <<gpdb.sh>>=
   mysql -u anonymous -e "create database if not exists gpdb"

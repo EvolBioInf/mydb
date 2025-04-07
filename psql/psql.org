@@ -19,7 +19,7 @@ We allow ``trusted'' access from all local connections by setting the
 connection method for local connections to ``trust''. For this we open
 as superuser the configuration file
 \begin{verbatim}
-/etc/postgresql/16/main/pg_hba.conf
+/etc/postgresql/17/main/pg_hba.conf
 \end{verbatim}
 Then we change the three entries in the connection table from peer and
 scram-sha-256 to trust. Here is the original table, slightly edited
@@ -67,7 +67,7 @@ It is also useful to have a database called the user name.
 We can drop this database again.
 #+end_export
 #+begin_src sh <<psql.sh>>=
-  dropdb anonymous
+  dropdb -U anonymous
 #+end_src
 #+begin_export latex
 Likewise, we can drop the user \ty{anonymous}.
@@ -81,5 +81,5 @@ and database \ty{anonymous}.
 #+end_export
 #+begin_src sh <<psql.sh>>=
   sudo -u postgres createuser -s anonymous
-  createdb anonymous
+  createdb -U anonymous
 #+end_src

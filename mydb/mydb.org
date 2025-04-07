@@ -77,9 +77,10 @@ port, by default 3306.
 #+end_src
 #+begin_export latex
 The configuration of a Mysql connection is encapsulated in the struct
-\ty{Config} contained in the \ty{mysql} package. We fill it with the
-parameters we have been passed and the address we just
-constructed. Then we convert that into the database source name, DSN.
+\ty{Config} contained in the \ty{mysql} package. We fill this struct
+with the parameters we have been passed and the address we just
+constructed. Then we convert the configuration struct into a string
+denoting the database source name, the DSN.
 #+end_export
 #+begin_src go <<Construct Mysql configuration>>=
   cfg := mysql.Config{
@@ -125,31 +126,54 @@ We ping the database to make sure we are actually connected.
 !The function \ty{OpenPostgresql} opens a Postgresql database given
 !its user, password, host, port, and name.
 
+We construct the data source and get the connection, which we return,
+together with the accompanying error.
+#+end_export
+#+begin_src go <<Open Postgresql>>=
+  func OpenPostgresql(user, pass, host, port,
+	  db string) (con *sql.DB, err error) {
+	  //<<Construct Postgresql data source>>
+	  //<<Get Postgresql connection>>
+	  return con, err
+  }
+#+end_src
+#+begin_export latex
 We construct the data source on the pattern
 \begin{verbatim}
 postgres://user:pass@host:port/db
 \end{verbatim}
+The default host is ``localhost'', the default port 5432.
 #+end_export
-#+begin_src go <<Open Postgresql>>=
-  func OpenPostgresql(user, pass, host, port,
-	  db string) (*sql.DB, error) {
-	  templ := "postgres://%s:%s@%s:%s/%s?sslmode=disable"
-	  if host == "" {
-		  host = "localhost"
-	  }
-	  if port == "" {
-		  port = "5432"
-	  }
-	  ds := fmt.Sprintf(templ, user, pass, host, port, db)
-	  d, e := sql.Open("pgx", ds)
-	  return d, e
+#+begin_src go <<Construct Postgresql data source>>=
+  templ := "postgres://%s:%s@%s:%s/%s"
+  if host == "" {
+	  host = "localhost"
   }
+  if port == "" {
+	  port = "5432"
+  }
+  ds := fmt.Sprintf(templ, user, pass, host, port, db)
 #+end_src
 #+begin_export latex
-We import \ty{fmt} and the Postgresql database driver.
+We import \ty{fmt}.
 #+end_export
 #+begin_src go <<Imports>>=
   "fmt"
+#+end_src
+#+begin_export latex
+We open the database connection using the \ty{pgx} driver for
+Postgresql and catch the error returned.
+#+end_export
+#+begin_src go <<Get Postgresql connection>>=
+  con, err = sql.Open("pgx", ds)
+  if err != nil {
+	  log.Fatal(err)
+  }
+#+end_src
+#+begin_export latex
+We import the Postgresql database driver using a blank import.
+#+end_export
+#+begin_src go <<Imports>>=
   _ "github.com/jackc/pgx/v5/stdlib"
 #+end_src
 #+begin_export latex
@@ -189,9 +213,9 @@ and query them in turn.
   //<<Construct query>>
   //<<Store result>>
   //<<Open db connections>>
-  connections = connections[2:]
+  nc := len(connections)
   for i, connection := range connections {
-	  fmt.Printf("Testing connection %d\n", i+1)
+	  fmt.Printf("Testing connection %d of %d\n", i+1, nc)
 	  //<<Query connection>>
   }
 #+end_src
@@ -204,14 +228,16 @@ We import \ty{sql} and \ty{fmt}.
 #+end_src
 #+begin_export latex
 In our query we join the four tables in the database, but only select
-one attribute from the result, the genome ID. This is not a realistic
-query, but it will do as our test.
+one attribute from the result, the genome ID. To make the query
+reproducible, we order the result. This is not a realistic query, but
+it will do as our test.
 #+end_export
 #+begin_src go <<Construct query>>=
   query := "select gid from genome " +
 	  "join publication using(pid) " +
 	  "join project using(gid) " +
-	  "join institute using(iid)"
+	  "join institute using(iid) " +
+	  "order by genome.gid"
 #+end_src
 #+begin_export latex
 The result we want is contained in file \ty{r.txt}, which we store as
